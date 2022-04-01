@@ -453,14 +453,8 @@ MonoBehaviour:
   searchInputField: {fileID: 155843919}
   searchText: {fileID: 425254604}
   searchButton: {fileID: 1475505908}
-  referenceGoogleSearchResult: {fileID: 1337439885}
+  graphNodeReference: {fileID: 1337439885}
   neighborDist: 250
-  noiseOffset: 0
-  velocity: 1
-  velocityVariation: 1
-  separationMultiply: 0
-  alignmentMultiply: 0
-  cohesionMultiply: 0
 --- !u!1 &425254602
 GameObject:
   m_ObjectHideFlags: 0
@@ -720,7 +714,7 @@ GameObject:
   - component: {fileID: 1337439885}
   - component: {fileID: 1337439888}
   m_Layer: 5
-  m_Name: GoogleSearchResult
+  m_Name: GraphNodeReference
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -759,7 +753,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rectTransform: {fileID: 1337439884}
-  alignment: {x: 0, y: 0}
   m_searchButton: {fileID: 1337439888}
   m_text: {fileID: 2143657329}
 --- !u!114 &1337439886

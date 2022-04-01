@@ -4,7 +4,7 @@ using SimpleJSON;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public static class GoogleSearch
+public static class GoogleSuggest
 {
     private const string SUGGEST_URL = "http://suggestqueries.google.com/complete/search?output=firefox&q={0}&hl=en";
 
