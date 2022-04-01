@@ -52,7 +52,7 @@ public class GraphNode : MonoBehaviour
 
         m_linkNodes.Add(googleSuggestResult);
 
-        Image image = new GameObject("Linked Line").AddComponent<Image>();
+        Image image = new GameObject("Link Image").AddComponent<Image>();
         image.rectTransform.SetParent(rectTransform, false);
         image.rectTransform.pivot = new Vector2(0.5f, 0f);
         Color color = Color.cyan;
