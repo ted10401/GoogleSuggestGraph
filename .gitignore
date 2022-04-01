@@ -1,0 +1,12 @@
+Library
+Logs
+.vs
+obj
+Temp
+*.sln
+*.csproj
+Builds/
+EditorHostingData/
+HostedData/
+ServerData/
+*.vsconfig
