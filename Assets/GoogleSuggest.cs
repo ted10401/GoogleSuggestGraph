@@ -23,8 +23,6 @@ public static class GoogleSuggest
 
         if(string.IsNullOrEmpty( unityWebRequest.error))
         {
-            Debug.Log(unityWebRequest.downloadHandler.text);
-
             JSONNode jSONNode = JSONNode.Parse(unityWebRequest.downloadHandler.text);
 
             for (int i = 0; i < jSONNode[1].Count; i++)

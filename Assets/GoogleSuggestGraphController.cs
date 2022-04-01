@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class CanvasController : MonoBehaviour
+public class GoogleSuggestGraphController : MonoBehaviour
 {
     [SerializeField] private RectTransform m_scrollParent = null;
     [SerializeField] private CanvasScaler m_canvasScaler = null;
