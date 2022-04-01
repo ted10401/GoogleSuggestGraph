@@ -11,7 +11,7 @@ public static class GoogleAPI
 
     public static async Task<List<string>> FindSuggest(string q)
     {
-        string url = string.Format(FIND_SUGGEST_URL, q);
+        string url = string.Format(FIND_SUGGEST_URL, UnityWebRequest.EscapeURL(q));
         UnityWebRequest unityWebRequest = UnityWebRequest.Get(url);
         unityWebRequest.SendWebRequest();
 
