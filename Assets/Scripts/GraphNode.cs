@@ -1,15 +1,20 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class GraphNode : MonoBehaviour
+public class GraphNode : MonoBehaviour, IPointerClickHandler
 {
     public RectTransform rectTransform = null;
     public Vector2 velocity = Vector2.zero;
     public bool isRootNode;
 
-    [SerializeField] private Button m_searchButton = null;
     [SerializeField] private Text m_text = null;
+
+    public UnityEvent onLeftClick;
+    public UnityEvent onMiddleClick;
+    public UnityEvent onRightClick;
 
     private GoogleSearchView m_googleSearchView;
     private GoogleSuggestGraph m_googleSuggestGraph;
@@ -17,20 +22,31 @@ public class GraphNode : MonoBehaviour
     private List<Image> m_graphLinks = new List<Image>();
     private List<float> m_linkSegmentLengths = new List<float>();
 
-    private void Awake()
+    public void OnPointerClick(PointerEventData eventData)
     {
-        m_searchButton.onClick.AddListener(OnSearchButtonClicked);
+        switch (eventData.button)
+        {
+            case PointerEventData.InputButton.Left:
+                onLeftClick.Invoke();
+                break;
+            case PointerEventData.InputButton.Middle:
+                onMiddleClick.Invoke();
+                break;
+            case PointerEventData.InputButton.Right:
+                onRightClick.Invoke();
+                break;
+        }
     }
 
-    private void OnSearchButtonClicked()
-    {
-        m_googleSearchView.Search(m_text.text);
-    }
-
-    public void Setup(GoogleSearchView googleSearchView)
+    public void SetGoogleSearchView(GoogleSearchView googleSearchView)
     {
         m_googleSearchView = googleSearchView;
         m_googleSuggestGraph = m_googleSearchView.googleSuggestGraph;
+    }
+
+    public void SetText(string text)
+    {
+        m_text.text = text;
     }
 
     public void SetPosition(Vector2 position)
@@ -41,11 +57,6 @@ public class GraphNode : MonoBehaviour
     public Vector2 GetPosition()
     {
         return rectTransform.anchoredPosition;
-    }
-
-    public void SetText(string value)
-    {
-        m_text.text = value;
     }
 
     public void AddLinkNode(GraphNode graphNode)

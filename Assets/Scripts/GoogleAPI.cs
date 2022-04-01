@@ -4,13 +4,14 @@ using SimpleJSON;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public static class GoogleSuggest
+public static class GoogleAPI
 {
-    private const string SUGGEST_URL = "http://suggestqueries.google.com/complete/search?output=firefox&q={0}&hl=en";
+    private const string FIND_SUGGEST_URL = "http://suggestqueries.google.com/complete/search?output=firefox&q={0}&hl=en";
+    private const string SEARCH_URL = "https://www.google.com/search?q={0}";
 
-    public static async Task<List<string>> Search(string q)
+    public static async Task<List<string>> FindSuggest(string q)
     {
-        string url = string.Format(SUGGEST_URL, q);
+        string url = string.Format(FIND_SUGGEST_URL, q);
         UnityWebRequest unityWebRequest = UnityWebRequest.Get(url);
         unityWebRequest.SendWebRequest();
 
@@ -36,5 +37,11 @@ public static class GoogleSuggest
         }
 
         return results;
+    }
+
+    public static void Search(string q)
+    {
+        string url = string.Format(SEARCH_URL, UnityWebRequest.EscapeURL(q));
+        Application.OpenURL(url);
     }
 }

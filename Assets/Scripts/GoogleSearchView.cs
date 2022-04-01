@@ -6,7 +6,7 @@ public class GoogleSearchView : MonoBehaviour
 {
     public InputField searchInputField;
     public Text searchText;
-    public Button searchButton;
+    public Button findSuggestButton;
     public RectTransform graphNodeParent;
     public GraphNode graphNodeReference;
     public Image graphLinkReference;
@@ -17,16 +17,16 @@ public class GoogleSearchView : MonoBehaviour
 
     private void Awake()
     {
-        searchButton.onClick.AddListener(OnSearchButtonClicked);
+        findSuggestButton.onClick.AddListener(OnFindSuggestButtonClicked);
         googleSuggestGraph.Setup(m_rootNodes);
     }
 
-    private void OnSearchButtonClicked()
+    private void OnFindSuggestButtonClicked()
     {
-        Search(searchText.text);
+        FindSuggest(searchText.text);
     }
 
-    public async void Search(string text)
+    public async void FindSuggest(string text)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -46,12 +46,8 @@ public class GoogleSearchView : MonoBehaviour
         else
         {
             rootNode = Instantiate(graphNodeReference, graphNodeParent);
-            rootNode.gameObject.SetActive(true);
-            rootNode.Setup(this);
-            rootNode.SetText(text);
-
-            Vector2 position = new Vector2(Random.value - 0.5f, Random.value - 0.5f) * 10f;
-            rootNode.SetPosition(position);
+            SetupGraphNode(rootNode, text, new Vector2(Random.value - 0.5f, Random.value - 0.5f) * 10f);
+            
             m_graphNodes.Add(text, rootNode);
         }
 
@@ -61,7 +57,7 @@ public class GoogleSearchView : MonoBehaviour
             m_rootNodes.Add(rootNode);
         }
 
-        List<string> results = await GoogleSuggest.Search(text);
+        List<string> results = await GoogleAPI.FindSuggest(text);
         results.Remove(text);
 
         for (int i = 0; i < results.Count; i++)
@@ -71,18 +67,29 @@ public class GoogleSearchView : MonoBehaviour
             if (!m_graphNodes.ContainsKey(resultText))
             {
                 GraphNode graphNode = Instantiate(graphNodeReference, graphNodeParent);
-                graphNode.gameObject.SetActive(true);
-                graphNode.Setup(this);
-                graphNode.SetText(resultText);
-
                 Vector2 position = rootNode.GetPosition();
+                SetupGraphNode(graphNode, resultText, position);
 
-                graphNode.SetPosition(position);
                 m_graphNodes.Add(resultText, graphNode);
             }
 
             GraphNode childNode = m_graphNodes[results[i]];
             rootNode.AddLinkNode(childNode);
         }
+    }
+
+    private void SetupGraphNode(GraphNode graphNode, string text, Vector2 position)
+    {
+        graphNode.gameObject.SetActive(true);
+        graphNode.SetGoogleSearchView(this);
+        graphNode.SetText(text);
+        graphNode.SetPosition(position);
+        graphNode.onLeftClick.AddListener(() => { FindSuggest(text); });
+        graphNode.onRightClick.AddListener(() => { Search(text); });
+    }
+
+    public void Search(string text)
+    {
+        GoogleAPI.Search(text);
     }
 }
