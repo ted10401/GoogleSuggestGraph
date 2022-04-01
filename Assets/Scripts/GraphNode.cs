@@ -11,6 +11,7 @@ public class GraphNode : MonoBehaviour
     [SerializeField] private Button m_searchButton = null;
     [SerializeField] private Text m_text = null;
 
+    private GoogleSearchView m_googleSearchView;
     private GoogleSuggestGraph m_googleSuggestGraph;
     private List<GraphNode> m_graphNodes = new List<GraphNode>();
     private List<Image> m_graphLinks = new List<Image>();
@@ -23,12 +24,13 @@ public class GraphNode : MonoBehaviour
 
     private void OnSearchButtonClicked()
     {
-        m_googleSuggestGraph.Search(m_text.text);
+        m_googleSearchView.Search(m_text.text);
     }
 
-    public void SetController(GoogleSuggestGraph controller)
+    public void Setup(GoogleSearchView googleSearchView)
     {
-        m_googleSuggestGraph = controller;
+        m_googleSearchView = googleSearchView;
+        m_googleSuggestGraph = m_googleSearchView.googleSuggestGraph;
     }
 
     public void SetPosition(Vector2 position)
@@ -55,7 +57,7 @@ public class GraphNode : MonoBehaviour
 
         m_graphNodes.Add(graphNode);
 
-        Image graphLink = Instantiate(m_googleSuggestGraph.graphLinkReference);
+        Image graphLink = Instantiate(m_googleSearchView.graphLinkReference);
         graphLink.gameObject.SetActive(true);
         graphLink.rectTransform.SetParent(rectTransform, false);
         m_graphLinks.Add(graphLink);

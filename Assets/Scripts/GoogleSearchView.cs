@@ -2,42 +2,33 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GoogleSuggestGraph : MonoBehaviour
+public class GoogleSearchView : MonoBehaviour
 {
+    public InputField searchInputField;
+    public Text searchText;
+    public Button searchButton;
     public RectTransform graphNodeParent;
     public GraphNode graphNodeReference;
     public Image graphLinkReference;
-    public Vector2 segmentLengthRange = new Vector2(200, 400);
-    [Range(0f, 2f)] public float constraintElastic = 0.5f;
-    public float velocity = 1f;
-    [Range(0f, 0.99f)] public float velocityElastic = 0.9f;
+    public GoogleSuggestGraph googleSuggestGraph;
 
     private Dictionary<string, GraphNode> m_graphNodes = new Dictionary<string, GraphNode>();
     private List<GraphNode> m_rootNodes = new List<GraphNode>();
 
-    private void Update()
+    private void Awake()
     {
-        ApplyConstraint();
-        ApplyVelocity();
+        searchButton.onClick.AddListener(OnSearchButtonClicked);
+        googleSuggestGraph.Setup(m_rootNodes);
     }
 
-    private void ApplyConstraint()
+    private void OnSearchButtonClicked()
     {
-        float length = segmentLengthRange.y * (m_rootNodes.Count - 1);
-        length *= Mathf.PI;
-        length /= m_rootNodes.Count;
-
-        GraphNodeUtil.LengthConstrait(m_rootNodes, length, constraintElastic, true);
-    }
-
-    private void ApplyVelocity()
-    {
-        GraphNodeUtil.UpdateVelocity(m_rootNodes, velocity, velocityElastic);
+        Search(searchText.text);
     }
 
     public async void Search(string text)
     {
-        if(string.IsNullOrEmpty(text))
+        if (string.IsNullOrEmpty(text))
         {
             return;
         }
@@ -56,7 +47,7 @@ public class GoogleSuggestGraph : MonoBehaviour
         {
             rootNode = Instantiate(graphNodeReference, graphNodeParent);
             rootNode.gameObject.SetActive(true);
-            rootNode.SetController(this);
+            rootNode.Setup(this);
             rootNode.SetText(text);
 
             Vector2 position = new Vector2(Random.value - 0.5f, Random.value - 0.5f) * 10f;
@@ -64,7 +55,7 @@ public class GoogleSuggestGraph : MonoBehaviour
             m_graphNodes.Add(text, rootNode);
         }
 
-        if(!m_rootNodes.Contains(rootNode))
+        if (!m_rootNodes.Contains(rootNode))
         {
             rootNode.isRootNode = true;
             m_rootNodes.Add(rootNode);
@@ -77,16 +68,14 @@ public class GoogleSuggestGraph : MonoBehaviour
         {
             string resultText = results[i];
 
-            if(!m_graphNodes.ContainsKey(resultText))
+            if (!m_graphNodes.ContainsKey(resultText))
             {
                 GraphNode graphNode = Instantiate(graphNodeReference, graphNodeParent);
                 graphNode.gameObject.SetActive(true);
-                graphNode.SetController(this);
+                graphNode.Setup(this);
                 graphNode.SetText(resultText);
 
-                Vector2 position = Vector2.up * Random.Range(segmentLengthRange.x, segmentLengthRange.y);
-                position = Quaternion.Euler(0, 0, 360f / results.Count * i) * position;
-                position += rootNode.GetPosition();
+                Vector2 position = rootNode.GetPosition();
 
                 graphNode.SetPosition(position);
                 m_graphNodes.Add(resultText, graphNode);
