@@ -5,13 +5,15 @@ using UnityEngine.UI;
 public class GraphNode : MonoBehaviour
 {
     public RectTransform rectTransform = null;
+    public Vector2 velocity = Vector2.zero;
 
     [SerializeField] private Button m_searchButton = null;
     [SerializeField] private Text m_text = null;
 
     private VisualizationGraph m_controller;
-    private List<GraphNode> m_linkNodes = new List<GraphNode>();
-    private List<Image> m_linkImages = new List<Image>();
+    private List<GraphNode> m_graphNodes = new List<GraphNode>();
+    private List<Image> m_graphLinks = new List<Image>();
+    private List<float> m_linkSegmentLengths = new List<float>();
 
     private void Awake()
     {
@@ -43,48 +45,150 @@ public class GraphNode : MonoBehaviour
         m_text.text = value;
     }
 
-    public void AddGoogleSuggestResult(GraphNode googleSuggestResult)
+    public void AddLinkNode(GraphNode graphNode)
     {
-        if(m_linkNodes.Contains(googleSuggestResult))
+        if(m_graphNodes.Contains(graphNode))
         {
             return;
         }
 
-        m_linkNodes.Add(googleSuggestResult);
+        m_graphNodes.Add(graphNode);
 
-        Image image = new GameObject("Link Image").AddComponent<Image>();
-        image.rectTransform.SetParent(rectTransform, false);
-        image.rectTransform.pivot = new Vector2(0.5f, 0f);
-        Color color = Color.cyan;
-        color.a = 0.25f;
-        image.color = color;
-        m_linkImages.Add(image);
+        Image graphLink = Instantiate(m_controller.graphLinkReference);
+        graphLink.gameObject.SetActive(true);
+        graphLink.rectTransform.SetParent(rectTransform, false);
+        m_graphLinks.Add(graphLink);
+
+        m_linkSegmentLengths.Add(Random.Range(m_controller.segmentLengthRange.x, m_controller.segmentLengthRange.y));
     }
 
-    public void AddSeparationVector()
+    public void AddSegmentLength(GraphNode graphNode)
     {
-        Vector2 separation = Vector2.zero;
-        foreach (GraphNode googleSuggestResult in m_linkNodes)
+        if(!m_graphNodes.Contains(graphNode))
         {
-            separation += rectTransform.anchoredPosition - googleSuggestResult.rectTransform.anchoredPosition;
+            return;
         }
 
-        separation /= m_linkNodes.Count;
-
-        rectTransform.anchoredPosition += separation;
+        for (int i = 0; i < m_graphNodes.Count; i++)
+        {
+            if(m_graphNodes[i] == graphNode)
+            {
+                m_linkSegmentLengths[i] = m_controller.segmentLengthRange.y * 3f;
+            }
+        }
     }
 
     private void Update()
     {
-        for (int i = 0; i < m_linkNodes.Count; i++)
-        {
-            GraphNode googleSuggestResult = m_linkNodes[i];
-            Image image = m_linkImages[i];
-            Vector2 direction = googleSuggestResult.rectTransform.anchoredPosition - rectTransform.anchoredPosition;
+        ApplyConstraint();
+        ApplySeparation();
+        ApplyVelocity();
+        UpdateLink();
+    }
 
-            image.rectTransform.anchoredPosition = direction.normalized * googleSuggestResult.rectTransform.sizeDelta.y;
+    private void ApplyConstraint()
+    {
+        ApplyConstraint(this, m_graphNodes);
+    }
+
+    private void ApplyConstraint(GraphNode targetNode, List<GraphNode> graphNodes)
+    {
+        for (int i = 0; i < graphNodes.Count; i++)
+        {
+            GraphNode graphNode = graphNodes[i];
+            if(targetNode == graphNode)
+            {
+                continue;
+            }
+
+            float segmentLength = m_linkSegmentLengths[i];
+
+            float distance = Vector2.Distance(targetNode.rectTransform.anchoredPosition, graphNode.rectTransform.anchoredPosition);
+            float constaintMagnitude = Mathf.Abs(distance - segmentLength);
+            Vector2 constraintDirection = Vector2.zero;
+
+            if (distance > segmentLength)
+            {
+                constraintDirection = graphNode.rectTransform.anchoredPosition - targetNode.rectTransform.anchoredPosition;
+                constraintDirection.Normalize();
+            }
+            else if (distance < segmentLength)
+            {
+                constraintDirection = targetNode.rectTransform.anchoredPosition - graphNode.rectTransform.anchoredPosition;
+                constraintDirection.Normalize();
+            }
+
+            Vector2 constraint = constraintDirection * constaintMagnitude;
+            targetNode.velocity += constraint * m_controller.constraintElastic * 0.5f;
+            graphNode.velocity -= constraint * m_controller.constraintElastic * 0.5f;
+        }
+    }
+
+    private void ApplySeparation()
+    {
+        for (int i = 0; i < m_graphNodes.Count; i++)
+        {
+            GraphNode graphNode = m_graphNodes[i];
+            float segmentLength = m_linkSegmentLengths[i];
+            ApplySeparation(graphNode, segmentLength, m_graphNodes);
+        }
+    }
+
+    public void ApplySeparation(GraphNode graphNode, float segmentLength, List<GraphNode> linkNodes)
+    {
+        Vector2 separationVector = Vector2.zero;
+        int count = 0;
+
+        for (int i = 0; i < linkNodes.Count; i++)
+        {
+            if(linkNodes[i] == graphNode)
+            {
+                continue;
+            }
+
+            separationVector += GetSeparationVector(graphNode.rectTransform, linkNodes[i].rectTransform, segmentLength);
+            count++;
+        }
+
+        if(count == 0)
+        {
+            return;
+        }
+
+        separationVector /= count;
+        graphNode.velocity += separationVector * m_controller.separationElastic;
+    }
+
+    private Vector2 GetSeparationVector(RectTransform target, RectTransform neighbor, float segmentLength)
+    {
+        var diff = target.anchoredPosition - neighbor.anchoredPosition;
+        var diffLen = diff.magnitude;
+        var scaler = Mathf.Clamp01(1.0f - diffLen / segmentLength);
+        return diff * (scaler / diffLen);
+    }
+
+    private void ApplyVelocity()
+    {
+        for (int i = 0; i < m_graphNodes.Count; i++)
+        {
+            Vector2 randomVelocity = new Vector2(Random.Range(m_controller.randomRangeX.x, m_controller.randomRangeX.y), Random.Range(m_controller.randomRangeY.x, m_controller.randomRangeY.y));
+            m_graphNodes[i].velocity += randomVelocity * m_controller.velocity;
+            m_graphNodes[i].velocity *= m_controller.velocityElastic;
+            m_graphNodes[i].rectTransform.anchoredPosition += m_graphNodes[i].velocity * Time.deltaTime;
+        }
+    }
+
+    private void UpdateLink()
+    {
+        for (int i = 0; i < m_graphNodes.Count; i++)
+        {
+            GraphNode graphNode = m_graphNodes[i];
+            Image image = m_graphLinks[i];
+            Vector2 direction = graphNode.rectTransform.anchoredPosition - rectTransform.anchoredPosition;
+
+            image.rectTransform.anchoredPosition = direction.normalized * graphNode.rectTransform.sizeDelta.y * 0.5f;
             image.rectTransform.up = direction;
-            image.rectTransform.sizeDelta = new Vector2(5, direction.magnitude - googleSuggestResult.rectTransform.sizeDelta.y * 2);
+            image.rectTransform.sizeDelta = new Vector2(5, direction.magnitude - graphNode.rectTransform.sizeDelta.y);
         }
     }
 }
